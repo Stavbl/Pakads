@@ -3,30 +3,45 @@
 
 using namespace std;
 
-Label::Label(int x, int y, char* txt) {
-	buffer = (char *)malloc(strlen(txt)+1);
-	strcpy(buffer, txt);
+Label::Label(int width, int x, int y, char* txt) {
 	position.X = x;
 	position.Y = y;
-	size = strlen(buffer);
+	size = width;
+	if (txt != NULL) {
+		buffer = (char *)malloc(strlen(txt) + 1);
+		strcpy(buffer, txt);
+		if (strlen(buffer) > size) {
+			size = strlen(buffer);
+		}
+	}
 }
-void Label::print(HANDLE h) {
-	SetConsoleCursorPosition(h, this->position);
-	CONSOLE_SCREEN_BUFFER_INFO bi;
-	GetConsoleScreenBufferInfo(h, &bi);
-	DWORD old = bi.wAttributes;
-	DWORD style =  FOREGROUND_GREEN | FOREGROUND_INTENSITY;
-	SetConsoleTextAttribute(h, style);
-	cout << buffer;
-	SetConsoleTextAttribute(h, old);
+void Label::print(HANDLE h, COORD cursor, COORD window) {
+	COORD p = this->pos();
+	p.X += window.X;
+	p.Y += window.Y;
+	SetConsoleCursorPosition(h, p);
+	for (int i = 0; i < width(); i++) {
+		cout << " ";
+	}
+	SetConsoleCursorPosition(h, p);
+	if (buffer != NULL) {
+		cout << buffer;
+	}
 }
 
+void Label::set_text(const char *txt) {
+	buffer = (char *)malloc(strlen(txt) + 1);
+	strcpy(buffer, txt); 
+	if (strlen(buffer) > size) {
+		size = strlen(buffer);
+	}
+}
 
-bool Label::handle_clicks(PCOORD mouse, PCOORD cursor) {
+bool Label::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor) {
 	return false;
 }
 
-bool Label::handle_keys(PCOORD cor, char c, int keycode) {
+bool Label::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 	return false;
 }
 
@@ -44,4 +59,7 @@ COORD Label::pos() {
 
 Label::~Label() {
 	free(buffer);
+	cout << "Something";
+	int x;
+	cin >> x;
 }

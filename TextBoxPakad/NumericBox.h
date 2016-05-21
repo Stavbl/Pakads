@@ -2,23 +2,19 @@
 #include <Windows.h>
 #include "FormElement.h"
 
-class TextBox : public FormElement
+class NumericBox : public FormElement
 {
 private:
-	char *buffer;
-	int len;
 	int size;
+	int minVal, maxVal, val = 0;
 public:
-	TextBox(int x = 0, int y = 0, int size =  30);
+	NumericBox(int width, int min, int max, int x = 0, int y = 0);
 	int width();
 	int height();
 	COORD pos();
 	void print(HANDLE h, COORD cursor, COORD window);
 	bool handle_keys(PCOORD x, COORD window, char c, int keycode);
 	bool handle_clicks(PCOORD mouse, COORD window, PCOORD cursor);
-	void shift(int j, char c);
-	void delete_char(int j);
-	void set_text(const char *txt);
-	char *get_text();
-	~TextBox();
+	void set_value(int val);
+	int get_value();
 };

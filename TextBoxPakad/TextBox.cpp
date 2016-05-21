@@ -13,49 +13,47 @@ TextBox::TextBox(int x, int y, int size) : len(0), size(size) {
 		buffer[i] = ' ';
 	}
 }
-void TextBox::print(HANDLE h) {
-	SetConsoleCursorPosition(h, this->position);
-	CONSOLE_SCREEN_BUFFER_INFO bi;
-	GetConsoleScreenBufferInfo(h, &bi);
-	DWORD old = bi.wAttributes;
-	DWORD style = BACKGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
-	SetConsoleTextAttribute(h, style);
+void TextBox::print(HANDLE h, COORD cursor, COORD window) {
+	COORD p = pos();
+	p.X += window.X;
+	p.Y += window.Y;
+	SetConsoleCursorPosition(h, p);
 	for (int i = 0; i<size; ++i) {
 		cout << buffer[i];
 	}
-	SetConsoleTextAttribute(h, old);
-
 }
 
 
-bool TextBox::handle_clicks(PCOORD mouse, PCOORD cursor) {
-	if (intersects(mouse)) {
+bool TextBox::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor) {
+	if (intersects(mouse, window)) {
 		cursor->X = mouse->X;
 		cursor->Y = mouse->Y;
-		if (cursor->X - position.X > len) {
-			cursor->X = len + position.X;
+		if (cursor->X - position.X - window.X > len) {
+			cursor->X = len + position.X + window.X;
 		}
 		if (len == 0) {
-			cursor->X = position.X;
+			cursor->X = position.X + window.X;
 		}
 		return true;
 	}
 	return false;
 }
 
-bool TextBox::handle_keys(PCOORD cor, char c, int keycode) {
+bool TextBox::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 	if (len <= size) {
-		if (intersects(cor)) {
+		if (intersects(cor, window)) {
 
 			if (keycode == 37) {
 				if (cor->X > 0) cor->X--;
-				cor->X = (cor->X - position.X) >= (len+1) ? position.X + len: cor->X;
+
+				if (cor->X < position.X + window.X) { cor->X = position.X + window.X; }
+				cor->X = (cor->X - position.X - window.X) >= (len+1) ? position.X + window.X + len: cor->X;
 				return true;
 			}
 			else if (keycode == 39) {
-				cor->X = cor->X - position.X >= len ? position.X + len : cor->X+1;
+				cor->X = cor->X - position.X - window.X >= len ? position.X + window.X + len : cor->X+1;
 				if (len == 0) {
-					cor->X = position.X;
+					cor->X = position.X + window.X;
 				}
 				return true;
 			}
@@ -65,32 +63,43 @@ bool TextBox::handle_keys(PCOORD cor, char c, int keycode) {
 			else if (keycode == 40) {
 				return false;
 			}
-
+			if (keycode == 46) {
+				if (cor->X - position.X - window.X >= len) {
+					return false;
+				}
+				else {
+					delete_char(cor->X - position.X - window.X + 1);
+					len--;
+					if (len < 0) { len = 0; }
+					if (cor->X < position.X + window.X) { cor->X = position.X + window.X; }
+					return true;
+				}
+			}
 			if (c == 0) { return false; }
-			if (cor->X - position.X > len) {
-				cor->X = (len == 0) ? position.X : len + position.X;
+			if (cor->X - position.X - window.X > len) {
+				cor->X = (len == 0) ? position.X + window.X : len + position.X;
 			}
 			if (keycode == 8) {
-				if (cor->X - position.X == len) {
+				if (cor->X - position.X - window.X == len) {
 					buffer[len-1] = ' ';
 					len--;
 					cor->X--;
 					if (len < 0) { len = 0; }
-					if (cor->X < position.X) { cor->X = position.X; }
+					if (cor->X < position.X + window.X) { cor->X = position.X + window.X; }
 				}
-				else if (cor->X - position.X  < len) {
-					delete_char(cor->X - position.X);
+				else if (cor->X - position.X - window.X < len) {
+					delete_char(cor->X - position.X - window.X);
 					len--;
 					cor->X--;
 					if (len < 0) { len = 0; }
-					if (cor->X < position.X) { cor->X = position.X; }
+					if (cor->X < position.X + window.X) { cor->X = position.X + window.X; }
 				}
 			} else if (len < size) {
 				if (len == 0) {
 					buffer[len] = c;
 					len++;
 					cor->X++;
-				} else if (cor->X - position.X == len) {
+				} else if (cor->X - position.X - window.X == len) {
 					buffer[len] = c;
 					len++;
 					if (len < size) {
@@ -98,13 +107,13 @@ bool TextBox::handle_keys(PCOORD cor, char c, int keycode) {
 					}
 				}
 				else {
-					shift(cor->X - position.X, c);
+					shift(cor->X - position.X - window.X, c);
 					len++;
 					cor->X++;
 				}
 			}
-			if (cor->X - position.X > len) {
-				cor->X = len + position.X + 1;
+			if (cor->X - position.X - window.X > len) {
+				cor->X = len + position.X + window.X + 1;
 			}
 			return true;
 		}
@@ -121,6 +130,16 @@ void TextBox::delete_char(int j) {
 	else {
 		buffer[len] = ' ';
 	}
+}
+void TextBox::set_text(const char * txt)
+{
+	strcpy(buffer, txt);
+	view_invalidated = true;
+}
+
+char * TextBox::get_text()
+{
+	return buffer;
 }
 void TextBox::shift(int j, char c) {
 	for (int i = len; i> j; --i) {

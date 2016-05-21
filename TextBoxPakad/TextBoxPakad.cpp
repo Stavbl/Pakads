@@ -6,6 +6,29 @@
 #include "ComboBox.h"
 #include "TextBoxPakad.h"
 #include "Label.h"
+#include "Button.h"
+#include "NumericBox.h"
+#include "Panel.h"
+
+using namespace std;
+
+struct PrintListener : public MouseListener {
+	int times = 0;
+	COORD pos;
+	TextBox tb;
+	PrintListener() : tb(20, 20, 10) {
+		tb.set_text("Button");
+		pos.X = 0;
+		pos.Y = 0;
+		tb.set_background_color(PURPLE);
+	}
+	void MousePressed(FormElement &element, int x, int y, bool is_left) {
+		pos.X += 1;
+		pos.Y += 1;
+		tb.set_position(pos);
+		element.set_background_color(times % 2 == 0 ? PURPLE : BLUE);
+	}
+};
 
 int main() {
 	_INPUT_RECORD  c;
@@ -20,53 +43,27 @@ int main() {
 	SetConsoleTextAttribute(ih, style);
 
 	FormEngine engine;
+	Panel ch = Panel(30, 12, 10, 3);
+	ch.set_border(DOUBLE_LINE);
+	ch.set_foreground_color(GREEN);
+	engine.addElement(&ch);
 
-	engine.addTextBox(0, 0);
-	engine.addTextBox(0, 3, 25);
-	engine.addTextBox(45, 0, 15);
-	
-	vector<string> demoOpts;
-	demoOpts.push_back("Hello");
-	demoOpts.push_back("World");
-	demoOpts.push_back("Motec");
-
-	engine.addRadioGroup(demoOpts, 0, 10);
-
-	vector<string> foodOpts;
-	foodOpts.push_back("Pizza");
-	foodOpts.push_back("Hamburger");
-	foodOpts.push_back("Sushi");
-	foodOpts.push_back("Pasta");
-	foodOpts.push_back("Poutine");
-
-	engine.addRadioGroup(foodOpts, 20, 10);
-
-	vector<string> cityOpts;
-	cityOpts.push_back("Tel Aviv");
-	cityOpts.push_back("New York");
-	cityOpts.push_back("Rio");
-	cityOpts.push_back("Berlin");
-	cityOpts.push_back("Amsterdam");
-
-	engine.addComboBox(cityOpts, 60, 8);
-
-	vector<string> colorsOpts;
-	colorsOpts.push_back("Blue");
-	colorsOpts.push_back("Green");
-	colorsOpts.push_back("Yellow");
-	colorsOpts.push_back("Black");
-	colorsOpts.push_back("Orange");
-	colorsOpts.push_back("Aquamarine");
-	colorsOpts.push_back("Black");
-	colorsOpts.push_back("Pink");
-
-	engine.addCheckBoxGroup(colorsOpts, 45, 10);
-
-	Label lbl = Label(0, 1, "Label 1");
-	Label lbl2 = Label(0, 2, "Label 2");
-
-	engine.addElement((FormElement*)&lbl);
-	engine.addElement((FormElement*)&lbl2);
+	Label lbl = Label(8, 2, 2, "Label");
+	/*vector<string> opts;
+	opts.push_back("One");
+	opts.push_back("Stav Blyman");
+	opts.push_back("Three");
+	RadioGroup rg = RadioGroup(3, 20, opts, 2, 6);*/
+	Panel p2 = Panel(15, 4, 12, 6);
+	p2.set_background_color(WHITE);
+	p2.set_border(SINGLE_LINE);
+	p2.set_foreground_color(BLACK);
+	NumericBox nb = NumericBox(6, 0, 100, 4, 3);
+	p2.addElement(&nb);
+	ch.addElement(&p2);
+	ch.addElement(&lbl);
+	//ch.addElement(&rg);
+	ch.addElement(&nb);
 
 	engine.redraw(oh);
 	int keyCode;
@@ -95,6 +92,7 @@ int main() {
 				SetConsoleCursorPosition(oh, ci.dwCursorPosition);
 			}
 		}
+		engine.validate_views(oh);
 	}
 	 
 	return 0;

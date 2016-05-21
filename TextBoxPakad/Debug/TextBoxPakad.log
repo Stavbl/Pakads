@@ -1,6 +1,4 @@
-﻿  Label.cpp
-c:\users\lab\documents\visual studio 2015\projects\textboxpakad\textboxpakad\label.cpp(8): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\string.h(119): note: see declaration of 'strcpy'
-c:\users\lab\documents\visual studio 2015\projects\textboxpakad\textboxpakad\label.cpp(19): warning C4244: 'argument': conversion from 'DWORD' to 'WORD', possible loss of data
-c:\users\lab\documents\visual studio 2015\projects\textboxpakad\textboxpakad\label.cpp(21): warning C4244: 'argument': conversion from 'DWORD' to 'WORD', possible loss of data
-  TextBoxPakad.vcxproj -> C:\Users\lab\documents\visual studio 2015\Projects\TextBoxPakad\Debug\TextBoxPakad.exe
+﻿  TextBoxPakad.cpp
+c:\users\lab\documents\visual studio 2015\projects\textboxpakad\textboxpakad\formelement.h(10): warning C4091: 'typedef ': ignored on left of 'ConsoleColor' when no variable is declared
+c:\users\lab\documents\visual studio 2015\projects\textboxpakad\textboxpakad\textboxpakad.cpp(43): warning C4244: 'argument': conversion from 'DWORD' to 'WORD', possible loss of data
+  TextBoxPakad.vcxproj -> C:\Users\lab\Documents\Visual Studio 2015\Projects\TextBoxPakad\Debug\TextBoxPakad.exe

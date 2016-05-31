@@ -1,12 +1,12 @@
 #pragma once
 #include <Windows.h>
 #include <string>
-#include "FormElement.h"
+#include "IControl.h"
 #include <vector>
 
 using namespace std;
 
-class ComboBox : public FormElement
+class ComboBox : public IControl
 {
 private:
 	vector<string> buffer;
@@ -23,8 +23,8 @@ public:
 	void print(HANDLE h, COORD cursor, COORD window);
 	bool handle_keys(PCOORD x, COORD window, char c, int keycode);
 	bool handle_clicks(PCOORD mouse, COORD window, PCOORD cursor);
-	void set_selected_index(int i);
-	int get_selected_index();
+	void SetSelectedIndex(size_t i);
+    size_t GetSelectedIndex();
 	~ComboBox();
 };
 

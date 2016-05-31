@@ -1,9 +1,9 @@
-#include "RadioGroup.h"
+#include "RadioList.h"
 #include <iostream>
 
 using namespace std;
 
-RadioGroup::RadioGroup(int height, int width, vector<string> entries, int x, int y) : selected(-1) {
+RadioList::RadioList(int height, int width, vector<string> entries, int x, int y) : selected(-1) {
 	position.X = x;
 	position.Y = y;
 	int i = 0;
@@ -14,7 +14,7 @@ RadioGroup::RadioGroup(int height, int width, vector<string> entries, int x, int
 	}
 }
 
-void RadioGroup::addOption(string str) {
+void RadioList::addOption(string str) {
 	if (str.size() > size) {
 		size = str.size();
 	}
@@ -28,12 +28,17 @@ void RadioGroup::addOption(string str) {
 	}	
 }
 
-void RadioGroup::print(HANDLE h, COORD cursor, COORD window) {
+void RadioList::print(HANDLE h, COORD cursor, COORD window) {
 	COORD tmp;
 	tmp.X = this->position.X + window.X;
-
+	DWORD style = color_to_rgb(foreground, background);
 	for (int i = 0; i<buffer.size(); ++i) {
-		
+		if (i + position.Y + window.Y == cursor.Y && intersects(&cursor, window)) {
+			SetConsoleTextAttribute(h, color_to_rgb(background, foreground));
+		}
+		else {
+			SetConsoleTextAttribute(h, style);
+		}
 		tmp.Y = this->position.Y + i + window.Y;
 		SetConsoleCursorPosition(h, tmp);
 		if (selected == i) {
@@ -46,6 +51,8 @@ void RadioGroup::print(HANDLE h, COORD cursor, COORD window) {
 			cout << " ";
 		}
 	}
+	SetConsoleTextAttribute(h, style);
+
 
 	for (int j = 0; j < sizeh - buffer.size(); j++) {
 		tmp.Y = this->position.Y + j + buffer.size() + window.Y;
@@ -56,20 +63,11 @@ void RadioGroup::print(HANDLE h, COORD cursor, COORD window) {
 	}
 }
 
-bool RadioGroup::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
+bool RadioList::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 	if (intersects(cor, window)) {
-			if (keycode == 37) {
-				return false;
-			}
-			else if (keycode == 39) {
-				return false;
-			}
-			else if (keycode == 38) {
-				return false;
-			}
-			else if (keycode == 40) {
-				return false;
-			}
+		if (keycode >= 37 && keycode <= 40) {
+			return false;
+		}
 
 			if (keycode == 0x0D) { c == ' '; }
 			if (c == 0) { return false; }
@@ -88,16 +86,16 @@ bool RadioGroup::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 	return false;
 }
 
-int RadioGroup::width() {
+int RadioList::width() {
 	return size + 4;
 }
 
-int RadioGroup::height() {
+int RadioList::height() {
 	return buffer.size();
 }
 
 
-bool RadioGroup::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor) {
+bool RadioList::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor) {
 	if (intersects(mouse, window)) {
 		if (selected == mouse->Y - position.Y - window.Y) {
 			selected = -1;
@@ -112,27 +110,24 @@ bool RadioGroup::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor) {
 	return false;
 }
 
-size_t RadioGroup::getSelectedIndex()
+size_t RadioList::GetSelectedIndex()
 {
 	return selected;
 }
 
-bool RadioGroup::setSelectedIndex(size_t index)
+void RadioList::SetSelectedIndex(size_t index)
 {
 	if (index >= buffer.size() || index < 0) {
-		return false;
+		return;
 	}
 	selected = index;
 	view_invalidated = true;
-	return true;
 }
 
-bool RadioGroup::clearSelection()
+void RadioList::ClearSelection()
 {
-	if (selected == -1) { return false; }
 	selected = -1;
-	return true;
 }
 
-RadioGroup::~RadioGroup() {
+RadioList::~RadioList() {
 }

@@ -1,15 +1,15 @@
 #pragma once
 #include <Windows.h>
-#include "FormElement.h"
+#include "IControl.h"
 
-class TextBox : public FormElement
+class TextBox : public IControl
 {
 private:
 	char *buffer;
 	int len;
 	int size;
 public:
-	TextBox(int x = 0, int y = 0, int size =  30);
+	TextBox(int size = 30, int x = 0, int y = 0);
 	int width();
 	int height();
 	COORD pos();
@@ -18,7 +18,7 @@ public:
 	bool handle_clicks(PCOORD mouse, COORD window, PCOORD cursor);
 	void shift(int j, char c);
 	void delete_char(int j);
-	void set_text(const char *txt);
-	char *get_text();
+	void SetValue(string txt);
+	string GetValue();
 	~TextBox();
 };

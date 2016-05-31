@@ -1,24 +1,36 @@
-#include "FormElement.h"
+#include "IControl.h"
 #include <iostream>
 using namespace std;
 
-FormElement::FormElement() : FormElement({ 0, 0 }) {
+IControl::IControl() : IControl({ 0, 0 }) {
 }
 
-FormElement::FormElement(COORD position) {
+IControl::IControl(COORD position) {
 	this->position = position;
 }
 
-bool FormElement::has_border() {
+bool IControl::has_border() {
 	return borderType != NONE;
 }
 
-void FormElement::set_border(BorderType border) {
+void IControl::Show()
+{
+	hidden = false;
+	view_invalidated = true;
+}
+
+void IControl::Hide()
+{
+	hidden = true;
+	view_invalidated = true;
+}
+
+void IControl::SetBorder(BorderType border) {
 	borderType = border;
 	view_invalidated = true;
 }
 
-void FormElement::print_border(HANDLE h, COORD window) {
+void IControl::print_border(HANDLE h, COORD window) {
 	if (borderType == NONE) { return; }
 	//pieces                              ┌       ┐       └        ┘      │       ─
 	const char borderParts[2][6] = { { '\xDA', '\xBF', '\xC0', '\xD9', '\xB3', '\xC4' },
@@ -105,7 +117,7 @@ void FormElement::print_border(HANDLE h, COORD window) {
 	}
 }
 
-DWORD color_to_rgb(ConsoleColor front, ConsoleColor back) {
+DWORD color_to_rgb(ForegroundColor front, BackgroundColor back) {
 	DWORD s = 0;
 	switch (front)
 	{
@@ -167,7 +179,10 @@ DWORD color_to_rgb(ConsoleColor front, ConsoleColor back) {
 	return s;
 }
 
-void FormElement::draw(HANDLE h, COORD cursor, COORD window) {
+void IControl::draw(HANDLE h, COORD cursor, COORD window) {
+	if (hidden) {
+		return;
+	}
 	CONSOLE_SCREEN_BUFFER_INFO bi;
 	GetConsoleScreenBufferInfo(h, &bi);
 	DWORD old = bi.wAttributes;
@@ -180,39 +195,40 @@ void FormElement::draw(HANDLE h, COORD cursor, COORD window) {
 }
 
 
-void FormElement::set_foreground_color(ConsoleColor color) {
+void IControl::SetForeground(ForegroundColor color) {
 	foreground = color;
 	view_invalidated = true;
 }
 
-void FormElement::set_background_color(ConsoleColor color) {
+void IControl::SetBackground(ForegroundColor color) {
 	background = color;
 	view_invalidated = true;
 }
 
-bool FormElement::needs_redraw()
+bool IControl::needs_redraw()
 {
 	return view_invalidated;
 }
 
-void FormElement::set_position(COORD pos)
+void IControl::set_position(COORD pos)
 {
 	position.X = pos.X;
 	position.Y = pos.Y;
 	view_invalidated = true;
 }
 
-bool FormElement::intersects(PCOORD pos, COORD window) {
+bool IControl::intersects(PCOORD pos, COORD window) {
+	if (hidden) { return false; }
 	return (pos->Y >= this->pos().Y + window.Y
 		&& pos->Y <= this->pos().Y + window.Y + this->height() - 1
 		&& pos->X >= this->pos().X + window.X
 		&& pos->X <= this->pos().X + window.X + this->width() - 1);
 }
 
-vector<COORD> &FormElement::tabPositions() {
+vector<COORD> &IControl::tabPositions() {
 	return tabPosArr;
 }
 
-COORD FormElement::pos() {
+COORD IControl::pos() {
 	return this->position;
 }

@@ -7,24 +7,27 @@
 using namespace std;
 
 typedef enum BorderType { NONE = -1, SINGLE_LINE = 0, DOUBLE_LINE = 1 } BorderType;
-typedef enum ConsoleColor { RED, GREEN, BLUE, TEAL, WHITE, BLACK, YELLOW, PURPLE};
+typedef enum ForegroundColor { RED, GREEN, BLUE, TEAL, WHITE, BLACK, YELLOW, PURPLE} ForegroundColor;
+typedef ForegroundColor BackgroundColor;
 
-DWORD color_to_rgb(ConsoleColor front, ConsoleColor back);
-class FormElement
+DWORD color_to_rgb(ForegroundColor front, BackgroundColor back);
+class IControl
 {
 protected:
 	COORD position;
 	vector<COORD> tabPosArr;
 	BorderType borderType = NONE;
-	ConsoleColor foreground = WHITE;
-	ConsoleColor background = BLACK;
+	ForegroundColor foreground = WHITE;
+	ForegroundColor background = BLACK;
 	bool view_invalidated = false;
+	bool hidden = false;
 public:
-	FormElement();
-	FormElement(COORD position);
+	IControl();
+	IControl(COORD position);
 
 	bool has_border();
-
+	void Show();
+	void Hide();
 	virtual int width() = 0;
 	virtual int height() = 0;
 	virtual COORD pos();
@@ -34,13 +37,13 @@ public:
 	virtual bool handle_keys(PCOORD x, COORD window, char c, int keycode) = 0;
 	virtual bool handle_clicks(PCOORD mouse, COORD window, PCOORD cursor) = 0;
 	virtual bool intersects(PCOORD pos, COORD window);
-	void set_border(BorderType border);
+	void SetBorder(BorderType border);
 	void print_border(HANDLE h, COORD window);
-	void set_foreground_color(ConsoleColor color);
-	void set_background_color(ConsoleColor color);
+	void SetForeground(ForegroundColor color);
+	void SetBackground(ForegroundColor color);
 	bool needs_redraw();
 	void set_position(COORD pos);
 
-	virtual ~FormElement() {};
+	virtual ~IControl() {};
 };
 

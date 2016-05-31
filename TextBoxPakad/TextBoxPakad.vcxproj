@@ -146,14 +146,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Button.h" />
-    <ClInclude Include="CheckBoxGroup.h" />
+    <ClInclude Include="Checklist.h" />
     <ClInclude Include="ComboBox.h" />
-    <ClInclude Include="FormElement.h" />
+    <ClInclude Include="IControl.h" />
     <ClInclude Include="FormEngine.h" />
     <ClInclude Include="Label.h" />
     <ClInclude Include="NumericBox.h" />
     <ClInclude Include="Panel.h" />
-    <ClInclude Include="RadioGroup.h" />
+    <ClInclude Include="Popup.h" />
+    <ClInclude Include="RadioList.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TextBox.h" />
@@ -161,14 +162,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Button.cpp" />
-    <ClCompile Include="CheckBoxGroup.cpp" />
+    <ClCompile Include="Checklist.cpp" />
     <ClCompile Include="ComboBox.cpp" />
-    <ClCompile Include="FormElement.cpp" />
+    <ClCompile Include="IControl.cpp" />
     <ClCompile Include="FormEngine.cpp" />
     <ClCompile Include="Label.cpp" />
     <ClCompile Include="NumericBox.cpp" />
     <ClCompile Include="Panel.cpp" />
-    <ClCompile Include="RadioGroup.cpp" />
+    <ClCompile Include="Popup.cpp" />
+    <ClCompile Include="RadioList.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="TextBox.cpp" />
     <ClCompile Include="TextBoxPakad.cpp" />

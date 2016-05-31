@@ -3,7 +3,7 @@
 #include "Label.h"
 
 typedef struct MouseListener {
-	virtual void MousePressed(FormElement &element, int x, int y, bool isLeft) = 0;
+	virtual void MousePressed(IControl &element, int x, int y, bool isLeft) = 0;
 } MouseListener;
 
 class Button : public Label

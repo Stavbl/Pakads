@@ -3,7 +3,7 @@
 
 using namespace std;
 
-Panel::Panel(int width, int height, int x, int y)
+Panel::Panel(int height, int width, int x, int y)
 {
 	size = width;
 	sizeh = height;
@@ -53,9 +53,11 @@ void Panel::print(HANDLE h, COORD cursor, COORD window)
 	}
 }
 
-void Panel::addElement(FormElement * elem)
+void Panel::AddControl(IControl * elem, int left, int top)
 {
 	elements.push_back(elem);
+	COORD pos = { left, top };
+	elem->set_position(pos);
 	view_invalidated = true;
 }
 

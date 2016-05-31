@@ -5,8 +5,19 @@
 using namespace std;
 
 
-FormEngine::FormEngine() {
+EventEngine::EventEngine() {
 }
+/*
+void EventEngine::PopupClicked(PopupResult res) {
+	if (event != NULL) {
+		event->PopupClicked(res);
+		delete popup;
+		popup = NULL;
+		event = NULL;
+		needsRefresh = true;
+	}
+}
+*/
 
 //void FormEngine::addTextBox(int x, int y, int len) {
 //	TextBox *tb = new TextBox(x, y, len);
@@ -42,40 +53,104 @@ FormEngine::FormEngine() {
 //	elements.push_back((FormElement *)rg);
 //}
 
-void FormEngine::addElement(FormElement *elem) {
-	elements.push_back(elem);
+void EventEngine::Run(IControl *elem) {
+	element = elem;
+	_INPUT_RECORD  c;
+	CONSOLE_SCREEN_BUFFER_INFO  ci;
+	DWORD read = 0;
+	HANDLE ih = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD mode = 0;
+	GetConsoleMode(ih, &mode);
+	SetConsoleMode(ih, mode & (~ENABLE_ECHO_INPUT) | (ENABLE_MOUSE_INPUT)& (~ENABLE_LINE_INPUT) & (~ENABLE_PROCESSED_OUTPUT) & (~ENABLE_QUICK_EDIT_MODE) | (ENABLE_EXTENDED_FLAGS)& (~ENABLE_INSERT_MODE) | ENABLE_WINDOW_INPUT);
+	HANDLE oh = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD style = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+	SetConsoleTextAttribute(ih, style);
+
+
+	int keyCode;
+	while (1) {
+		ReadConsoleInput(ih, &c, 1, &read);
+		if (read == 1) {
+			if (c.EventType == KEY_EVENT && c.Event.KeyEvent.bKeyDown) {
+				keyCode = c.Event.KeyEvent.wVirtualKeyCode;
+				GetConsoleScreenBufferInfo(oh, &ci);
+				int width = ci.srWindow.Bottom - ci.srWindow.Top;
+				if (handleKeys(&ci.dwCursorPosition, c.Event.KeyEvent.uChar.AsciiChar, keyCode, oh)) {
+				}
+				else if (keyCode == 37) {
+					ci.dwCursorPosition.X = (ci.dwCursorPosition.X <= 0) ? 0 : ci.dwCursorPosition.X - 1;
+				}
+				else if (keyCode == 39) {
+					ci.dwCursorPosition.X = (ci.dwCursorPosition.X >= ci.dwMaximumWindowSize.X) ? 0 : ci.dwCursorPosition.X + 1;
+				}
+				else if (keyCode == 38) {
+					ci.dwCursorPosition.Y = (ci.dwCursorPosition.Y <= 0) ? 0 : ci.dwCursorPosition.Y - 1;
+				}
+				else if (keyCode == 40) {
+					ci.dwCursorPosition.Y = (ci.dwCursorPosition.Y >= ci.dwMaximumWindowSize.Y) ? 0 : ci.dwCursorPosition.Y + 1;
+				}
+				SetConsoleCursorPosition(oh, ci.dwCursorPosition);
+				redraw(oh, ci);
+				SetConsoleCursorPosition(oh, ci.dwCursorPosition);
+			}
+			else if (c.EventType == MOUSE_EVENT && c.Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
+				GetConsoleScreenBufferInfo(oh, &ci);
+				if (handleMouse(&c.Event.MouseEvent.dwMousePosition, &ci.dwCursorPosition, oh)) {
+				}
+				SetConsoleCursorPosition(oh, ci.dwCursorPosition);
+			}
+		}
+		validate_views(oh);
+	}
+
+
+	//elements.push_back(elem);
+	//needsRefresh = true;
 }
 
 
 
-bool FormEngine::handleKeys(PCOORD cor, char c, int keycode, HANDLE oh) {
+bool EventEngine::handleKeys(PCOORD cor, char c, int keycode, HANDLE oh) {
+
+	if (element == NULL) { return false; }
 	COORD mouse = *cor;
 	COORD window;
 	window.X = 0;
 	window.Y = 0;
 	if (c == '\t') {
+	//	if (popup != NULL) {
+		//	return true;
+		//}
 		focusOnNextElement(cor, oh);
 		return true;
 	}
-	for (int i = 0; i < elements.size(); i++) {
-		if (elements[i]->handle_keys(cor, window, c, keycode)) {
-			elements[i]->draw(oh, mouse, window);
+/*	if (popup != NULL) {
+		if (popup->handle_keys(cor, window, c, keycode)) {
+			popup->draw(oh, mouse, window);
 			return true;
 		}
-	}
+		return false;
+	}*/
+	//for (int i = 0; i < elements.size(); i++) {
+		if (element->handle_keys(cor, window, c, keycode)) {
+			element->draw(oh, mouse, window);
+			return true;
+		}
+	//}
 	return false;
 }
 
-bool* FormEngine::calculateElementMap(int screen_width, int screen_height) {
+bool* EventEngine::calculateElementMap(int screen_width, int screen_height) {
 	bool *map = new bool[screen_width*screen_height];
 	for (int i = 0; i < screen_width * screen_height; i++) {
 		map[i] = true;
 	}
-	for (int i = 0; i < elements.size(); i++) {
-		COORD cd = elements[i]->pos();
-		int width = elements[i]->width();
-		int height = elements[i]->height();
-		if (elements[i]->has_border()) {
+	if (element == NULL) { return map; }
+	//for (int i = 0; i < elements.size(); i++) {
+		COORD cd = element->pos();
+		int width = element->width();
+		int height = element->height();
+		if (element->has_border()) {
 			cd.X -= 1;
 			cd.Y -= 1;
 			height += 2;
@@ -89,11 +164,12 @@ bool* FormEngine::calculateElementMap(int screen_width, int screen_height) {
 				}
 			}
 		}
-	}
+	//}
 	return map;
 }
 
-void FormEngine::clear_screen(HANDLE oh) {
+void EventEngine::clear_screen(HANDLE oh) {
+
 	SetConsoleTextAttribute(oh, 0);
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	GetConsoleScreenBufferInfo(oh, &info);
@@ -101,8 +177,8 @@ void FormEngine::clear_screen(HANDLE oh) {
 	pos.X = 0;
 	pos.Y = 0;
 	SetConsoleCursorPosition(oh, pos);
-	int height = -1;
-	for (int i = 0; i < elements.size(); i++) {
+	int height = info.srWindow.Bottom - info.srWindow.Top;//-1;
+	/*for (int i = 0; i < elements.size(); i++) {
 		int size = elements[i]->pos().Y + elements[i]->height() + (elements[i]->has_border() ? 1 : 0);
 		if (size > height) {
 			height = size;
@@ -110,7 +186,7 @@ void FormEngine::clear_screen(HANDLE oh) {
 	}
 	if (height == -1) {
 		height = info.dwMaximumWindowSize.Y;
-	}
+	}*/
 	bool *map = calculateElementMap(info.dwMaximumWindowSize.X, height);
 	for (int y = 0; y < height; y++) {
 		SetConsoleCursorPosition(oh, pos);
@@ -130,49 +206,66 @@ void FormEngine::clear_screen(HANDLE oh) {
 	delete[] map;
 }
 
-void FormEngine::redraw(HANDLE oh) {
-	CONSOLE_SCREEN_BUFFER_INFO info;
-	GetConsoleScreenBufferInfo(oh, &info);
+void EventEngine::redraw(HANDLE oh, CONSOLE_SCREEN_BUFFER_INFO info) {
+	if (element == NULL) { return; }
 	COORD screen = { 0,0 };
 	COORD cursor = info.dwCursorPosition;
-	for (int i = 0; i < elements.size(); i++) {
-		elements[i]->draw(oh, cursor, screen);
-	}
+//	for (int i = 0; i < elements.size(); i++) {
+		element->draw(oh, cursor, screen);
+	//}
+	//if (popup != NULL) {
+	//	popup->draw(oh, cursor, screen);
+	//}
 }
 
-void FormEngine::validate_views(HANDLE oh)
+void EventEngine::validate_views(HANDLE oh)
 {
+	if (element == NULL) { return; }
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	GetConsoleScreenBufferInfo(oh, &info);
-	for (int i = 0; i < elements.size(); i++) {
-		if (elements[i]->needs_redraw()) {
-			clear_screen(oh);
-			redraw(oh);
-			break;
-		}
+	if (needsRefresh) {
+		needsRefresh = false;
+		clear_screen(oh);
+		redraw(oh, info);
+		return;
 	}
+
+	//for (int i = 0; i < elements.size(); i++) {
+		if (element->needs_redraw()) {
+			clear_screen(oh);
+			redraw(oh, info);
+		}
+	//}
 	SetConsoleCursorPosition(oh, info.dwCursorPosition);
 }
 
-bool FormEngine::handleMouse(PCOORD mouse, PCOORD cursor, HANDLE oh) {
+bool EventEngine::handleMouse(PCOORD mouse, PCOORD cursor, HANDLE oh) {
+	if (element == NULL) { return false; }
 	COORD cr = *cursor;
 	COORD screen = { 0,0 };
-	for (int i = 0; i < elements.size(); i++) {
-		if (elements[i]->handle_clicks(mouse, screen, cursor)) {
-			elements[i]->draw(oh, cr, screen);
+	/*if (popup != NULL) {
+		if (popup->handle_clicks(mouse, screen, cursor)) {
+			popup->draw(oh, cr, screen);
 			return true;
 		}
-	}
+		return false;
+	}*/
+	//for (int i = 0; i < elements.size(); i++) {
+		if (element->handle_clicks(mouse, screen, cursor)) {
+			element->draw(oh, cr, screen);
+			return true;
+		}
+	//}
 	return false;
 }
 
-void FormEngine::focusOnNextElement(PCOORD pos, HANDLE oh) {
-	if (elements.size() == 0) { return; }
-	for (int i = 0; i < elements.size(); i++) {
+void EventEngine::focusOnNextElement(PCOORD pos, HANDLE oh) {
+	if (element == NULL) { return; }
+	//for (int i = 0; i < elements.size(); i++) {
 
-		if (elements[i]->tabPositions().size() == 0) { continue; }
-		if (elements[i]->intersects(pos, { 0,0 })) {
-			FormElement *f = elements[i];
+		if (element->tabPositions().size() == 0) { return; }
+		if (element->intersects(pos, { 0,0 })) {
+			IControl *f = element;
 			int index = -1;
 			int min = -1;
 			for (int j = 0; j < f->tabPositions().size(); j++) {
@@ -193,7 +286,6 @@ void FormEngine::focusOnNextElement(PCOORD pos, HANDLE oh) {
 			if (index == -1) {
 				pos->X = f->pos().X + f->width() + 1;
 				pos->Y = f->pos().Y;
-				break;
 			}
 			else {
 				pos->X = f->tabPositions()[index].X;
@@ -201,7 +293,7 @@ void FormEngine::focusOnNextElement(PCOORD pos, HANDLE oh) {
 				return;
 			}
 		}
-	}
+	//}
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	GetConsoleScreenBufferInfo(oh, &info);
 
@@ -211,30 +303,28 @@ void FormEngine::focusOnNextElement(PCOORD pos, HANDLE oh) {
 	int num;
 	int smallestIndex = 0;
 	int smallestNum = -1;
-	for (int i = 0; i < elements.size(); i++) {
-		if (elements[i]->tabPositions().size() == 0) { continue; }
-		num = elements[i]->pos().X + (elements[i]->pos().Y * info.dwMaximumWindowSize.X) - offset;
+//	for (int i = 0; i < elements.size(); i++) {
+		if (element->tabPositions().size() == 0) { return; }
+		num = element->pos().X + (element->pos().Y * info.dwMaximumWindowSize.X) - offset;
 		if (num > 0 && (num < distance || distance == -1)) {
 			distance = num;
-			index = i;
+			index = 0;
 		}
 
 		if (num < smallestNum || smallestNum == -1) {
 				smallestNum = num;
-				smallestIndex = i;
+				smallestIndex = 0;
 		}
-	}
+	//}
 	
 	if (distance == -1) { distance = smallestIndex; }
 
-	if (distance != -1) {
-		pos->X = elements[index]->tabPositions()[0].X;
-		pos->Y = elements[index]->tabPositions()[0].Y;
+	if (distance != -1 && element->tabPositions().size() > 0) {
+		pos->X = element->tabPositions()[0].X;
+		pos->Y = element->tabPositions()[0].Y;
 	}
 }
 
-FormEngine::~FormEngine() {
-	for (int i = 0; i < elements.size(); i++) {
-		delete elements[i];
-	}
+EventEngine::~EventEngine() {
+
 }

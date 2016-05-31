@@ -1,6 +1,6 @@
 #include "Button.h"
 
-Button::Button(int width, int x, int y, char * txt) : Label(width, x, y, txt)
+Button::Button(int width, int x, int y, char * txt) : Label(width, txt, x, y)
 {
 }
 

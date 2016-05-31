@@ -3,7 +3,7 @@
 
 using namespace std;
 
-TextBox::TextBox(int x, int y, int size) : len(0), size(size) {
+TextBox::TextBox(int size, int x, int y) : len(0), size(size) {
 	buffer = (char *)malloc(size);
 	position.X = x;
 	position.Y = y;
@@ -131,13 +131,16 @@ void TextBox::delete_char(int j) {
 		buffer[len] = ' ';
 	}
 }
-void TextBox::set_text(const char * txt)
+void TextBox::SetValue(string txt)
 {
-	strcpy(buffer, txt);
+	for (int i = 0; i < txt.size(); i++) {
+		buffer[i] = txt[i];
+	}
+	len = txt.size();
 	view_invalidated = true;
 }
 
-char * TextBox::get_text()
+string TextBox::GetValue()
 {
 	return buffer;
 }

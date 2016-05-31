@@ -1,12 +1,12 @@
 #pragma once
 #include <Windows.h>
 #include <string>
-#include "FormElement.h"
+#include "IControl.h"
 #include <vector>
 
 using namespace std;
 
-class RadioGroup : public FormElement
+class RadioList : public IControl
 {
 private:
 	vector<string> buffer;
@@ -14,16 +14,16 @@ private:
 	int size;
 	int sizeh;
 public:
-	RadioGroup(int height, int width, vector<string> entries, int x = 0, int y = 0);
+	RadioList(int height, int width, vector<string> entries, int x = 0, int y = 0);
 	void addOption(string str);
 	int width();
 	int height();
 	void print(HANDLE h, COORD cursor, COORD window);
 	bool handle_keys(PCOORD x, COORD window, char c, int keycode);
 	bool handle_clicks(PCOORD mouse, COORD window, PCOORD cursor);
-	size_t getSelectedIndex();
-	bool setSelectedIndex(size_t index);
-	bool clearSelection();
-	~RadioGroup();
+	size_t GetSelectedIndex();
+	void SetSelectedIndex(size_t index);
+	void ClearSelection();
+	~RadioList();
 };
 

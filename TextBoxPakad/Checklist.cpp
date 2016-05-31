@@ -1,9 +1,9 @@
-#include "CheckBoxGroup.h"
+#include "Checklist.h"
 #include <iostream>
 
 using namespace std;
 
-CheckBoxGroup::CheckBoxGroup(int _height, int width, vector<string> entries, int x, int y) {
+Checklist::Checklist(int _height, int width, vector<string> entries, int x, int y) {
 	position.X = x;
 	position.Y = y;
 	int i = 0;
@@ -14,7 +14,7 @@ CheckBoxGroup::CheckBoxGroup(int _height, int width, vector<string> entries, int
 	}
 }
 
-void CheckBoxGroup::addOption(string str) {
+void Checklist::addOption(string str) {
 	if (str.size() > size) {
 		size = str.size();
 	}
@@ -29,12 +29,19 @@ void CheckBoxGroup::addOption(string str) {
 	}
 }
 
-void CheckBoxGroup::print(HANDLE h, COORD cursor, COORD window) {
+void Checklist::print(HANDLE h, COORD cursor, COORD window) {
 	COORD tmp;
 	tmp.X = this->position.X + window.X;
+	DWORD style = color_to_rgb(foreground, background);
 	for (int i = 0; i<buffer.size(); ++i) {
 		tmp.Y = this->position.Y + i + window.Y;
 		SetConsoleCursorPosition(h, tmp);
+		if (i + position.Y + window.Y == cursor.Y && intersects(&cursor, window)) {
+			SetConsoleTextAttribute(h, color_to_rgb(background, foreground));
+		}
+		else {
+			SetConsoleTextAttribute(h, style);
+		}
 		if (selected[i]) {
 			cout << "[x] ";
 		}
@@ -45,7 +52,8 @@ void CheckBoxGroup::print(HANDLE h, COORD cursor, COORD window) {
 		for (int j = 0; j < size - buffer[i].size(); j++) {
 			cout << " ";
 		}
-	}
+	}			
+	SetConsoleTextAttribute(h, style);
 	for (int j = 0; j < sizeh - buffer.size(); j++) {
 		tmp.Y = this->position.Y + j + buffer.size() + window.Y;
 		SetConsoleCursorPosition(h, tmp);
@@ -54,18 +62,9 @@ void CheckBoxGroup::print(HANDLE h, COORD cursor, COORD window) {
 		}
 	}
 }
-bool CheckBoxGroup::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
+bool Checklist::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 	if (intersects(cor, window)) {
-		if (keycode == 37) {
-			return false;
-		}
-		else if (keycode == 39) {
-			return false;
-		}
-		else if (keycode == 38) {
-			return false;
-		}
-		else if (keycode == 40) {
+		if (keycode >= 37 && keycode <= 40) {
 			return false;
 		}
 
@@ -87,16 +86,16 @@ bool CheckBoxGroup::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 	return false;
 }
 
-int CheckBoxGroup::width() {
+int Checklist::width() {
 	return size + 4;
 }
 
-int CheckBoxGroup::height() {
+int Checklist::height() {
 	return sizeh;
 }
 
 
-bool CheckBoxGroup::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor) {
+bool Checklist::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor) {
 	if (intersects(mouse, window)) {
 		if (selected[mouse->Y - position.Y - window.Y]) {
 			selected[mouse->Y - position.Y - window.Y] = false;
@@ -111,7 +110,7 @@ bool CheckBoxGroup::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor) {
 	return false;
 }
 
-void CheckBoxGroup::selectIndex(size_t i)
+void Checklist::SelectIndex(size_t i)
 {
 	if (i < 0 || i >= buffer.size()) {
 		return;
@@ -120,7 +119,7 @@ void CheckBoxGroup::selectIndex(size_t i)
 	view_invalidated = true;
 }
 
-void CheckBoxGroup::deselectIndex(size_t i)
+void Checklist::DeselectIndex(size_t i)
 {
 	if (i < 0 || i >= buffer.size()) {
 		return;
@@ -129,7 +128,7 @@ void CheckBoxGroup::deselectIndex(size_t i)
 	view_invalidated = true;
 }
 
-vector<size_t> CheckBoxGroup::getSelectedIndicies()
+vector<size_t> Checklist::GetSelectedIndicies()
 {
 	vector<size_t> indexes;
 	for (int i = 0; i < selected.size(); i++) {
@@ -140,5 +139,5 @@ vector<size_t> CheckBoxGroup::getSelectedIndicies()
 	return indexes;
 }
 
-CheckBoxGroup::~CheckBoxGroup() {
+Checklist::~Checklist() {
 }

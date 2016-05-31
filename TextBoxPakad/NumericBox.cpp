@@ -4,7 +4,7 @@
 using namespace std;
 
 
-NumericBox::NumericBox(int width, int min, int max, int x, int y)
+NumericBox::NumericBox(int height, int width, int min, int max, int x, int y)
 {
 	size = width + 2;
 	minVal = min;
@@ -74,12 +74,12 @@ bool NumericBox::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor)
 	return false;
 }
 
-void NumericBox::set_value(int val)
+void NumericBox::SetValue(int val)
 {
 	this->val = val;
 }
 
-int NumericBox::get_value()
+int NumericBox::GetValue()
 {
 	return val;
 }

@@ -47,9 +47,9 @@ void ComboBox::print(HANDLE h, COORD cursor, COORD window) {
 		}
 
 		for (int i = 0; i<buffer.size(); ++i) {
-			//if (i+2+position.Y == bi.dwCursorPosition.Y) {
-			//	SetConsoleTextAttribute(h, color_to_rgb(background, foreground));
-			//} else
+			if (i+2+position.Y + window.Y == cursor.Y && intersects(&cursor, window)) {
+				SetConsoleTextAttribute(h, color_to_rgb(background, foreground));
+			} else
 			if (i == selected) {
 				SetConsoleTextAttribute(h, style | BACKGROUND_INTENSITY);
 			}
@@ -106,7 +106,6 @@ void ComboBox::print(HANDLE h, COORD cursor, COORD window) {
 bool ComboBox::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 	if (intersects(cor, window)) {
 		if (keycode >= 37 && keycode <= 40) {
-			//view_invalidated = true;
 			return false;
 		}
 
@@ -175,13 +174,13 @@ bool ComboBox::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor) {
 	return false;
 }
 
-void ComboBox::set_selected_index(int i)
+void ComboBox::SetSelectedIndex(size_t i)
 {
 	selected = i;
 	view_invalidated = true;
 }
 
-int ComboBox::get_selected_index()
+size_t ComboBox::GetSelectedIndex()
 {
 	return selected;
 }

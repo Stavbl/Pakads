@@ -7,6 +7,7 @@ Label::Label(int width, string txt, int x, int y) {
 	position.X = x;
 	position.Y = y;
 	size = width;
+
 	buffer = (char *)malloc(txt.size() + 1);
 	strcpy(buffer, txt.c_str());
 	if (strlen(buffer) > size) {
@@ -61,7 +62,5 @@ COORD Label::pos() {
 
 Label::~Label() {
 	free(buffer);
-	cout << "Something";
-	int x;
-	cin >> x;
+	
 }

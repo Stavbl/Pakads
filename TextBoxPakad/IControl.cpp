@@ -51,7 +51,7 @@ void IControl::print_border(HANDLE h, COORD window) {
 	}
 
 	// top bar
-	if (pos.Y > 0) {
+	if (this->position.Y + window.Y > 0) {
 		pos.X = this->position.X + window.X;
 		pos.Y = this->position.Y + window.Y - 1;
 		SetConsoleCursorPosition(h, pos);

@@ -1,6 +1,2 @@
 ﻿  TextBoxPakad.cpp
-  FormEngine.cpp
-c:\users\lab\documents\visual studio 2015\projects\textboxpakad\textboxpakad\formengine.cpp(67): warning C4244: 'argument': conversion from 'DWORD' to 'WORD', possible loss of data
-c:\users\lab\documents\visual studio 2015\projects\textboxpakad\textboxpakad\formengine.cpp(271): warning C4018: '<': signed/unsigned mismatch
-  Generating Code...
   TextBoxPakad.vcxproj -> C:\Users\lab\Documents\Visual Studio 2015\Projects\TextBoxPakad\Debug\TextBoxPakad.exe

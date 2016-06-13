@@ -2,6 +2,9 @@
 #include "Panel.h"
 #include "Button.h"
 
+
+#undef MessageBox
+
 typedef enum PopupResult {
 	OK_CLICKED, CANCEL_CLICKED
 } PopupResult;

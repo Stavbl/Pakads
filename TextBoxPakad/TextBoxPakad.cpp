@@ -70,6 +70,22 @@ int main() {
 	ComboBox cbox = ComboBox(8, v, 2, 2);
 	Checklist cgroup = Checklist(3, 8, v, 12, 2);
 	RadioList r = RadioList(8, 7, v, 26, 2);
+	class popevent : public PopupEvent {
+		virtual void PopupClicked(PopupResult res) {
+			if (res == OK_CLICKED) {
+			}
+			else {
+			
+			}
+		}
+
+	};
+	popevent pe;
+	MessageBox m = MessageBox(6, 34,  &pe);
+	m.SetTitle("Popup");
+	m.SetText("Are you sure you want to cancel ?");
+	m.SetBorder(SINGLE_LINE);
+	engine.Run(&m);
 	cgroup.SetForeground(RED);
 	cgroup.SetBackground(WHITE);
 	engine.Run(&r);

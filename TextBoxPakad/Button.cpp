@@ -1,7 +1,10 @@
 #include "Button.h"
 
-Button::Button(int width, int x, int y, char * txt) : Label(width, txt, x, y)
+Button::Button(int width, int x, int y, char * txt) : Label(width, "", x, y)
 {
+	if (txt != NULL) {
+		SetValue(txt);
+	}
 }
 
 bool Button::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor)

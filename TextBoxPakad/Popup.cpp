@@ -5,7 +5,7 @@ using namespace std;
 
 
 
-MessageBox::MessageBox(int height, int width, PopupEvent *cb) : Panel(height, width), okbtn(width / 2), cancelbtn(width / 2), textLbl(width, NULL, 0, (height - 1) / 2), titleLbl(width, NULL, 0, 0)
+MessageBox::MessageBox(int height, int width, PopupEvent *cb) : Panel(height, width), okbtn(width / 2), cancelbtn(width / 2), textLbl(width, "", 0, (height - 1) / 2), titleLbl(width, "", 0, 0)
 {
 	event = cb;
 	HANDLE oh = GetStdHandle(STD_OUTPUT_HANDLE);

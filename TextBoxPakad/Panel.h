@@ -10,6 +10,7 @@ private:
 	vector<IControl *> elements;
 public:
 	Panel(int height, int width, int x = 0, int y = 0);
+	bool* calculateElementMap(int screen_width, int screen_height);
 	int width();
 	int height();
 	COORD pos();

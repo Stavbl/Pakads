@@ -7,51 +7,6 @@ using namespace std;
 
 EventEngine::EventEngine() {
 }
-/*
-void EventEngine::PopupClicked(PopupResult res) {
-	if (event != NULL) {
-		event->PopupClicked(res);
-		delete popup;
-		popup = NULL;
-		event = NULL;
-		needsRefresh = true;
-	}
-}
-*/
-
-//void FormEngine::addTextBox(int x, int y, int len) {
-//	TextBox *tb = new TextBox(x, y, len);
-//	tb->set_background_color(YELLOW);
-//	tb->set_foreground_color(BLACK);
-//	elements.push_back((FormElement *)tb);
-//}
-
-//void FormEngine::addRadioGroup(vector<string> options, int x, int y) {
-//	RadioGroup *rg = new RadioGroup(x, y);
-//	for (int i = 0; i < options.size(); i++) {
-//		rg->addOption(options[i]);
-//	}
-//	rg->set_border(SINGLE_LINE);
-//	elements.push_back((FormElement *)rg);
-//}
-//
-//void FormEngine::addCheckBoxGroup(vector<string> options, int x, int y) {
-//	CheckBoxGroup *rg = new CheckBoxGroup(x, y);
-//	for (int i = 0; i < options.size(); i++) {
-//		rg->addOption(options[i]);
-//	}
-//	elements.push_back((FormElement *)rg);
-//}
-//
-//void FormEngine::addComboBox(vector<string> options, int x, int y) {
-//	ComboBox *rg = new ComboBox(x, y);
-//	for (int i = 0; i < options.size(); i++) {
-//		rg->addOption(options[i]);
-//	}
-//	rg->set_border(DOUBLE_LINE);
-//	rg->set_foreground_color(PURPLE);
-//	elements.push_back((FormElement *)rg);
-//}
 
 void EventEngine::Run(IControl *elem) {
 	element = elem;
@@ -66,7 +21,7 @@ void EventEngine::Run(IControl *elem) {
 	DWORD style = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 	SetConsoleTextAttribute(ih, style);
 
-
+	validate_views(oh);
 	int keyCode;
 	while (1) {
 		ReadConsoleInput(ih, &c, 1, &read);
@@ -104,8 +59,6 @@ void EventEngine::Run(IControl *elem) {
 	}
 
 
-	//elements.push_back(elem);
-	//needsRefresh = true;
 }
 
 
@@ -118,25 +71,13 @@ bool EventEngine::handleKeys(PCOORD cor, char c, int keycode, HANDLE oh) {
 	window.X = 0;
 	window.Y = 0;
 	if (c == '\t') {
-	//	if (popup != NULL) {
-		//	return true;
-		//}
 		focusOnNextElement(cor, oh);
 		return true;
 	}
-/*	if (popup != NULL) {
-		if (popup->handle_keys(cor, window, c, keycode)) {
-			popup->draw(oh, mouse, window);
-			return true;
-		}
-		return false;
-	}*/
-	//for (int i = 0; i < elements.size(); i++) {
 		if (element->handle_keys(cor, window, c, keycode)) {
 			element->draw(oh, mouse, window);
 			return true;
 		}
-	//}
 	return false;
 }
 
@@ -177,16 +118,7 @@ void EventEngine::clear_screen(HANDLE oh) {
 	pos.X = 0;
 	pos.Y = 0;
 	SetConsoleCursorPosition(oh, pos);
-	int height = info.srWindow.Bottom - info.srWindow.Top;//-1;
-	/*for (int i = 0; i < elements.size(); i++) {
-		int size = elements[i]->pos().Y + elements[i]->height() + (elements[i]->has_border() ? 1 : 0);
-		if (size > height) {
-			height = size;
-		}
-	}
-	if (height == -1) {
-		height = info.dwMaximumWindowSize.Y;
-	}*/
+	int height = info.srWindow.Bottom - info.srWindow.Top;
 	bool *map = calculateElementMap(info.dwMaximumWindowSize.X, height);
 	for (int y = 0; y < height; y++) {
 		SetConsoleCursorPosition(oh, pos);

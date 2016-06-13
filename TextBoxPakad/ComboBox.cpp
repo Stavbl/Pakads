@@ -114,10 +114,10 @@ bool ComboBox::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 
 		if (c == ' ') {
 			if (opened) {
-				if (cor->Y + window.Y < pos().Y + 2) {
+				if (cor->Y - window.Y < pos().Y + 2) {
 					
 				} else {
-					selected = cor->Y + window.Y - 2 - pos().Y;
+					selected = cor->Y - window.Y - 2 - pos().Y;
 				}
 				opened = false;
 				cor->Y = pos().Y + window.Y;

@@ -12,6 +12,7 @@ RadioList::RadioList(int height, int width, vector<string> entries, int x, int y
 	for (int i = 0; i < entries.size(); i++) {
 		addOption(entries[i]);
 	}
+	view = new View(x, y, this->width() + 2, this->height() + 2);
 }
 
 void RadioList::addOption(string str) {
@@ -19,10 +20,11 @@ void RadioList::addOption(string str) {
 		size = str.size();
 	}
 	buffer.push_back(str);
-	COORD p = position;
-	p.X += 1;
-	p.Y += tabPosArr.size();
-	tabPosArr.push_back(p);
+	TabPosition tp;
+	tp.pos.X = 2;
+	tp.pos.Y = tabPosArr.size()+1;
+	tp.element = this;
+	tabPosArr.push_back(tp);
 	if (buffer.size() > sizeh) {
 		sizeh = buffer.size();
 	}	
@@ -65,12 +67,26 @@ void RadioList::print(HANDLE h, COORD cursor, COORD window) {
 
 bool RadioList::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 	if (intersects(cor, window)) {
+		if (keycode == 38) {
+			cor->Y -= 1;
+			if (cor->Y == pos().Y+1) {
+				cor->Y = pos().Y + sizeh+1;
+			}
+			return true;
+		}
+		else if (keycode == 40) {
+			cor->Y += 1;
+			if (cor->Y == pos().Y + sizeh+2) {
+				cor->Y = pos().Y + 2;
+			}
+			return true;
+		}
 		if (keycode >= 37 && keycode <= 40) {
-			return false;
+			return true;
 		}
 
 			if (keycode == 0x0D) { c == ' '; }
-			if (c == 0) { return false; }
+			if (c == 0) { return true; }
 
 			
 			if (c == ' ') {
@@ -129,5 +145,40 @@ void RadioList::ClearSelection()
 	selected = -1;
 }
 
+void RadioList::updateView(COORD cursor)
+{
+	int layer = (active) ? 2 : 1;
+	/*if (cursor.X > 0 && cursor.X < width() + 2 && cursor.Y > 0 && cursor.Y < height() + 2) {
+		layer = 2;
+
+	}*/
+	view->clearAll(foreground, background);
+	view->solidifyBackground();
+	updateBorder(layer);
+
+	ForegroundColor fc = foreground;
+	BackgroundColor bc = background;
+	for (int i = 0; i<buffer.size(); ++i) {
+		fc = foreground;
+		bc = background;
+		
+		view->update(1, i + 1, '(', fc, bc, layer);
+		if (selected == i) {
+			view->update(2, i + 1, '*', fc, bc, layer);
+		}
+		view->update(3, i + 1, ')', fc, bc, layer);
+		for (int j = 0; j < buffer[i].size(); j++) {
+			view->update(5+j, i + 1, buffer[i][j], fc, bc, layer);
+		}
+		if (active && 1 + i == cursor.Y && cursor.X > 0 && cursor.X < width() + 2) {
+			for (int j = 0; j < width(); j++) {
+				view->fcolor[((i + 1)*view->width) + j+1] = bc;
+				view->bcolor[((i + 1)*view->width) + j+1] = fc;
+			}
+		}
+	}
+}
+
 RadioList::~RadioList() {
+	delete view;
 }

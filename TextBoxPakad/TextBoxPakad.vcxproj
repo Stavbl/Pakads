@@ -159,6 +159,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TextBox.h" />
     <ClInclude Include="TextBoxPakad.h" />
+    <ClInclude Include="View.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Button.cpp" />
@@ -174,6 +175,7 @@
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="TextBox.cpp" />
     <ClCompile Include="TextBoxPakad.cpp" />
+    <ClCompile Include="View.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

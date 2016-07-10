@@ -11,6 +11,7 @@ public:
 	Label(int width, string txt, int x = 0, int y = 0);
 	int width();
 	int height();
+	void updateView(COORD cursor);
 	COORD pos();
 	void print(HANDLE h, COORD cursor, COORD window);
 	bool handle_keys(PCOORD x, COORD window, char c, int keycode);

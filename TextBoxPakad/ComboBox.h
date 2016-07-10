@@ -10,7 +10,7 @@ class ComboBox : public IControl
 {
 private:
 	vector<string> buffer;
-	vector<COORD> closedTabPos;
+	vector<TabPosition> closedTabPos;
 	int selected = -1;
 	int opened = 0;
 	int size;
@@ -19,7 +19,9 @@ public:
 	void addOption(string str);
 	int width();
 	int height();
-	vector<COORD>& tabPositions();
+	void setActive(bool active);
+	vector<TabPosition> tabPositions();
+	void updateView(COORD cursor);
 	void print(HANDLE h, COORD cursor, COORD window);
 	bool handle_keys(PCOORD x, COORD window, char c, int keycode);
 	bool handle_clicks(PCOORD mouse, COORD window, PCOORD cursor);

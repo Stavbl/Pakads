@@ -205,6 +205,7 @@ void IControl::SetBackground(ForegroundColor color) {
 	view_invalidated = true;
 }
 
+
 bool IControl::needs_redraw()
 {
 	return view_invalidated;
@@ -214,6 +215,8 @@ void IControl::set_position(COORD pos)
 {
 	position.X = pos.X;
 	position.Y = pos.Y;
+	view->x = pos.X;
+	view->y = pos.Y;
 	view_invalidated = true;
 }
 
@@ -225,10 +228,47 @@ bool IControl::intersects(PCOORD pos, COORD window) {
 		&& pos->X <= this->pos().X + window.X + this->width() - 1);
 }
 
-vector<COORD> &IControl::tabPositions() {
+vector<TabPosition> IControl::tabPositions() {
 	return tabPosArr;
 }
 
 COORD IControl::pos() {
 	return this->position;
+}
+
+const View *IControl::getView() {
+	return view;
+}
+
+void IControl::setActive(bool active)
+{
+	this->active = active;
+}
+
+void IControl::updateView(COORD cursor) {
+	
+}
+
+void IControl::updateBorder(int layer)
+{
+	if (borderType == NONE) {
+		view->clearBorder();
+		return; 
+	}
+	//pieces                              ┌       ┐       └        ┘      │       ─
+	const char borderParts[2][6] = { { '\xDA', '\xBF', '\xC0', '\xD9', '\xB3', '\xC4' },
+	{ '\xC9', '\xBB', '\xC8', '\xBC', '\xBA', '\xCD' } };
+
+	view->update(0, 0, borderParts[borderType][0], foreground, background, layer);
+	view->update(width()+1, 0, borderParts[borderType][1], foreground, background, layer);
+	view->update(0, height()+1, borderParts[borderType][2], foreground, background, layer);
+	view->update(width()+1, height()+1, borderParts[borderType][3], foreground, background, layer);
+	for (int i = 0; i < width(); i++) {
+		view->update(1+i, 0, borderParts[borderType][5], foreground, background, layer);
+		view->update(1 + i, height()+1, borderParts[borderType][5], foreground, background, layer);
+	}
+	for (int i = 0; i < height(); i++) {
+		view->update(0, i+1, borderParts[borderType][4], foreground, background, layer);
+		view->update(width()+1, i+1, borderParts[borderType][4], foreground, background, layer);
+	}
 }

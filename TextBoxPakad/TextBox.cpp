@@ -7,11 +7,16 @@ TextBox::TextBox(int size, int x, int y) : len(0), size(size) {
 	buffer = (char *)malloc(size);
 	position.X = x;
 	position.Y = y;
-	tabPosArr.push_back(position);
+	TabPosition tp;
+	tp.pos.X = 1;
+	tp.pos.Y = 1;
+	tp.element = this;
+	tabPosArr.push_back(tp);
 	int i = 0;
 	for (i = 0; i<size; ++i) {
 		buffer[i] = ' ';
 	}
+	view = new View(x, y, size + 2, 3);
 }
 void TextBox::print(HANDLE h, COORD cursor, COORD window) {
 	COORD p = pos();
@@ -40,6 +45,9 @@ bool TextBox::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor) {
 }
 
 bool TextBox::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
+	if (c == '\n' || c == '\r') {
+		return false;
+	}
 	if (len <= size) {
 		if (intersects(cor, window)) {
 
@@ -68,7 +76,11 @@ bool TextBox::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 					return false;
 				}
 				else {
-					delete_char(cor->X - position.X - window.X + 1);
+					int index = cor->X - position.X - window.X;
+					if (index < 0) {
+						index = 0;
+					}
+					delete_char(index);
 					len--;
 					if (len < 0) { len = 0; }
 					if (cor->X < position.X + window.X) { cor->X = position.X + window.X; }
@@ -88,7 +100,11 @@ bool TextBox::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 					if (cor->X < position.X + window.X) { cor->X = position.X + window.X; }
 				}
 				else if (cor->X - position.X - window.X < len) {
-					delete_char(cor->X - position.X - window.X);
+					int index = cor->X - position.X - window.X -1;
+					if (index < 0) {
+						index = 0;
+					}
+					delete_char(index);
 					len--;
 					cor->X--;
 					if (len < 0) { len = 0; }
@@ -140,6 +156,21 @@ void TextBox::SetValue(string txt)
 	view_invalidated = true;
 }
 
+void TextBox::updateView(COORD cursor)
+{
+	int layer = (active) ? 2 : 1;
+	view->clearAll(foreground, background);
+	updateBorder(layer);
+	for (int i = 0; i<size; ++i) {
+		if (cursor.X == i+1 && cursor.Y == 1) {
+			view->update(i + 1, 1, buffer[i], background, foreground, layer);
+		}
+		else {
+			view->update(i + 1, 1, buffer[i], foreground, background, layer);
+		}
+	}
+}
+
 string TextBox::GetValue()
 {
 	return buffer;
@@ -165,4 +196,5 @@ COORD TextBox::pos() {
 
 TextBox::~TextBox() {
 	free(buffer);
+	delete view;
 }

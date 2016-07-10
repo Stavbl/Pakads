@@ -9,6 +9,7 @@ Panel::Panel(int height, int width, int x, int y)
 	sizeh = height;
 	position.X = x;
 	position.Y = y;
+	view = new View(x, y, width+2, height+2);
 }
 
 int Panel::width()
@@ -26,12 +27,28 @@ COORD Panel::pos()
 	return position;
 }
 
-vector<COORD>& Panel::tabPositions()
+void Panel::setActive(bool active)
 {
-	vector<COORD> tabs;
+	this->active = active;
+	if (active == false) {
+		for (int j = 0; j < elements.size(); j++) {
+			elements[j]->setActive(false);
+		}
+	}
+}
+
+vector<TabPosition> Panel::tabPositions()
+{
+	vector<TabPosition> tabs;
 	for (int i = 0; i < elements.size(); i++) {
-		vector<COORD> tb = elements[i]->tabPositions();
-		tabs.insert(tabs.end(), tb.begin(), tb.end());
+		vector<TabPosition> tb = elements[i]->tabPositions();
+		for (int j = 0; j < tb.size(); j++) {
+			tb[j].pos.X += elements[i]->pos().X;
+			tb[j].pos.Y += elements[i]->pos().Y;
+			tb[j].offset.X += elements[i]->pos().X;
+			tb[j].offset.Y += elements[i]->pos().Y;
+			tabs.push_back(tb[j]);
+		}
 	}
 	return tabs;
 }
@@ -106,8 +123,21 @@ bool Panel::handle_keys(PCOORD x, COORD window, char c, int keycode)
 	window.Y += position.Y;
 	for (int i = 0; i < elements.size(); i++) {
 		if (elements[i]->handle_keys(x, window, c, keycode)) {
+			elements[i]->setActive(true);
+			for (int j = 0; j < elements.size(); j++) {
+				if (i == j) {
+					continue;
+				}
+				elements[j]->setActive(false);
+			}
+			IControl *e = elements[i];
+			elements.erase(elements.begin() + i);
+			elements.insert(elements.begin(), e);
 			return true;
 		}
+	}
+	for (int j = 0; j < elements.size(); j++) {
+		elements[j]->setActive(false);
 	}
 	return false;
 }
@@ -118,8 +148,38 @@ bool Panel::handle_clicks(PCOORD mouse, COORD window, PCOORD cursor)
 	window.Y += position.Y;
 	for (int i = 0; i < elements.size(); i++) {
 		if (elements[i]->handle_clicks(mouse, window, cursor)) {
+			elements[i]->setActive(true);
+			for (int j = 0; j < elements.size(); j++) {
+				if (i == j) {
+					continue;
+				}
+				elements[j]->setActive(false);
+			}
+			IControl *e = elements[i];
+			elements.erase(elements.begin() + i);
+			elements.insert(elements.begin(), e);
 			return true;
 		}
 	}
+	for (int j = 0; j < elements.size(); j++) {
+		elements[j]->setActive(false);
+	}
 	return false;
+}
+
+void Panel::updateView(COORD cursor)
+{
+	view->clearAll();
+	for (int i = 0; i < elements.size(); i++) {
+		COORD crsr = cursor;
+		crsr.X -= elements[i]->pos().X;
+		crsr.Y -= elements[i]->pos().Y;
+		elements[i]->updateView(crsr);
+		view->insert(elements[i]->getView());
+	}
+	updateBorder(1);
+}
+
+Panel::~Panel() {
+	delete view;
 }

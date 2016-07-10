@@ -13,6 +13,7 @@ Label::Label(int width, string txt, int x, int y) {
 	if (strlen(buffer) > size) {
 		size = strlen(buffer);
 	}
+	view = new View(x, y, this->width() + 2, this->height() + 2);
 }
 void Label::print(HANDLE h, COORD cursor, COORD window) {
 	COORD p = this->pos();
@@ -56,11 +57,31 @@ int Label::height() {
 	return 1;
 }
 
+void Label::updateView(COORD cursor)
+{
+	int layer = (active) ? 2 : 1;
+	/*if (cursor.X > 0 && cursor.X < width() + 2 && cursor.Y > 0 && cursor.Y < height() + 2) {
+	layer = 2;
+
+	}*/
+	view->clearAll(foreground, background);
+	view->solidifyBackground();
+	updateBorder(layer);
+
+	if (buffer != NULL) {
+		int w = strlen(buffer);
+		for (int i = 0; i < w; i++) {
+			view->update(1+((width() - w) / 2)+i, 1, buffer[i], foreground, background, layer);
+		}
+	}
+
+}
+
 COORD Label::pos() {
 	return position;
 }
 
 Label::~Label() {
 	free(buffer);
-	
+	delete view;
 }

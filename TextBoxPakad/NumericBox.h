@@ -17,4 +17,6 @@ public:
 	bool handle_clicks(PCOORD mouse, COORD window, PCOORD cursor);
 	void SetValue(int val);
 	int GetValue();
+	void updateView(COORD cursor);
+	~NumericBox();
 };

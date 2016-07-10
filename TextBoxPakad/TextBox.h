@@ -19,6 +19,7 @@ public:
 	void shift(int j, char c);
 	void delete_char(int j);
 	void SetValue(string txt);
+	void updateView(COORD cursor);
 	string GetValue();
 	~TextBox();
 };

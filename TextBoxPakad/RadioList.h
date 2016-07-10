@@ -24,6 +24,7 @@ public:
 	size_t GetSelectedIndex();
 	void SetSelectedIndex(size_t index);
 	void ClearSelection();
+	void updateView(COORD cursor);
 	~RadioList();
 };
 

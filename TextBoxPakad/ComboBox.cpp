@@ -8,10 +8,16 @@ ComboBox::ComboBox(int width, vector<string> entries, int x, int y) {
 	position.Y = y;
 	int i = 0;
 	size = width;
-	closedTabPos.push_back(position);
+	TabPosition tp;
+	tp.pos.X = size;
+	tp.pos.Y = 1;
+	tp.element = this;
+	closedTabPos.push_back(tp);
+	tabPosArr.push_back(tp);
 	for (int i = 0; i < entries.size(); i++) {
 		addOption(entries[i]);
 	}
+	view = new View(x, y, width + 2, entries.size() + 4);
 }
 
 void ComboBox::addOption(string str) {
@@ -20,9 +26,13 @@ void ComboBox::addOption(string str) {
 	}
 	selected = 0;
 	buffer.push_back(str);
-	COORD p = position;
-	p.Y += tabPosArr.size()+2;
-	tabPosArr.push_back(p);
+	TabPosition tp;
+	tp.pos.X = 1;
+	tp.pos.Y = tabPosArr.size()+2;
+	tp.element = this;
+	tabPosArr.push_back(tp);
+	tp.active = false;
+	closedTabPos.push_back(tp);
 }
 
 void ComboBox::print(HANDLE h, COORD cursor, COORD window) {
@@ -105,11 +115,33 @@ void ComboBox::print(HANDLE h, COORD cursor, COORD window) {
 }
 bool ComboBox::handle_keys(PCOORD cor, COORD window, char c, int keycode) {
 	if (intersects(cor, window)) {
+		if (keycode == 38) {
+			cor->Y -= 1;
+			cor->X = pos().X + width() + 1;
+			if (cor->Y == pos().Y + 1) {
+				cor->Y = pos().Y + height() + 1;
+			}
+			if (cor->Y == pos().Y + 3) {
+				cor->Y = pos().Y + 2;
+			}
+			return true;
+		}
+		else if (keycode == 40) {
+			cor->Y += 1; 
+			if (cor->Y == pos().Y + 3) {
+				cor->Y = pos().Y + 4;
+			}
+			if (cor->Y == pos().Y + height() + 2) {
+				cor->Y = pos().Y + 2;
+			}
+			return true;
+		}
 		if (keycode >= 37 && keycode <= 40) {
-			return false;
+			return true;
 		}
 
-		if (c == 0) { return false; }
+		if (keycode == 0x0D) { c == ' '; }
+		if (c == 0) { return true; }
 
 
 		if (c == ' ') {
@@ -140,12 +172,88 @@ int ComboBox::height() {
 	return (opened) ? buffer.size()+2 : 1;
 }
 
-vector<COORD> &ComboBox::tabPositions() {
+void ComboBox::setActive(bool active)
+{
+	this->active = active;
+	if (this->opened && !active) {
+		this->opened = false;
+	}
+}
+
+vector<TabPosition> ComboBox::tabPositions() {
 	if (opened) {
 		return tabPosArr;
 	}
 	else {
 		return closedTabPos;
+	}
+}
+
+void ComboBox::updateView(COORD cursor)
+{
+	int layer = (active) ? 2 : 1;
+	/*int layer = 1;
+	if (cursor.X > 0 && cursor.X < width() + 2 && cursor.Y > 0 && cursor.Y < height() + 2) {
+		layer = 2;
+	}*/
+	view->clearAll(foreground, background);
+	updateBorder(layer);
+	if (buffer.size() <= 0) { return; }
+	if (opened) {
+		if (selected != -1) {
+			for (int i = 0; i < buffer[selected].size(); i++) {
+				view->update(1 + i, 1, buffer[selected][i], foreground, background, layer);
+			}
+		}
+		if (cursor.Y != 1 || cursor.X != width()) {
+			view->update(width(), 1, '-', foreground, background, layer);
+		}
+		else {
+			view->update(width(), 1, '-', background, foreground, layer);
+		}
+		for (int i = 0; i < width(); i++) {
+			view->update(i + 1, 2, '-', foreground, background, layer);
+		}
+		
+
+		for (int i = 0; i<buffer.size(); ++i) {
+			if (cursor.X > 0 && cursor.X < width()+2 && cursor.Y == i+2) {
+				for (int j = 0; j < buffer[i].size(); j++) {
+					view->update(1 + j, i+3, buffer[i][j], foreground, background, layer);
+				}
+			}
+			else {
+				for (int j = 0; j < buffer[i].size(); j++) {
+					view->update(1 + j, i + 3, buffer[i][j], foreground, background, layer);
+				}
+			}
+			if (active && 3 + i == cursor.Y && cursor.X > 0 && cursor.X < width() + 2) {
+				for (int j = 0; j < width(); j++) {
+					view->fcolor[((i + 3)*view->width) + j + 1] = background;
+					view->bcolor[((i + 3)*view->width) + j + 1] = foreground;
+				}
+			}
+		}
+		
+		view->solidifyBackground(layer);
+		view->clearBorder();
+	}
+	else {
+
+		if (selected != -1) {
+			for (int i = 0; i < buffer[selected].size(); i++) {
+				view->update(1 + i, 1, buffer[selected][i], foreground, background, layer);
+			}
+		}
+		if (cursor.Y != 1 || cursor.X != width()) {
+			view->update(width(), 1, '+', foreground, background, layer);
+		}
+		else {
+			view->update(width(), 1, '+', background, foreground, layer);
+		}
+		for (int i = 0; i < width(); i++) {
+			view->layer[width() + 2 + i + 1] = 1;
+		}
 	}
 }
 
@@ -186,4 +294,5 @@ size_t ComboBox::GetSelectedIndex()
 }
 
 ComboBox::~ComboBox() {
+	delete view;
 }

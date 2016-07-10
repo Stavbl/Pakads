@@ -16,14 +16,43 @@ void EventEngine::Run(IControl *elem) {
 	HANDLE ih = GetStdHandle(STD_INPUT_HANDLE);
 	DWORD mode = 0;
 	GetConsoleMode(ih, &mode);
-	SetConsoleMode(ih, mode & (~ENABLE_ECHO_INPUT) | (ENABLE_MOUSE_INPUT)& (~ENABLE_LINE_INPUT) & (~ENABLE_PROCESSED_OUTPUT) & (~ENABLE_QUICK_EDIT_MODE) | (ENABLE_EXTENDED_FLAGS)& (~ENABLE_INSERT_MODE) | ENABLE_WINDOW_INPUT);
+	SetConsoleMode(ih, mode & (~ENABLE_ECHO_INPUT) | (ENABLE_MOUSE_INPUT)& (~ENABLE_LINE_INPUT) & (~ENABLE_PROCESSED_OUTPUT) & (~ENABLE_QUICK_EDIT_MODE) | (ENABLE_EXTENDED_FLAGS)& (~ENABLE_INSERT_MODE) | ENABLE_WINDOW_INPUT );
+	//ShowCursor(false);
 	HANDLE oh = GetStdHandle(STD_OUTPUT_HANDLE);
 	DWORD style = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 	SetConsoleTextAttribute(ih, style);
+	const View *v = elem->getView();
+	COORD npos;
+	
+	//validate_views(oh);
 
-	validate_views(oh);
+	CONSOLE_CURSOR_INFO cid;
+	cid.dwSize = 100;
+	cid.bVisible = false;
+	SetConsoleCursorInfo(oh, &cid);
 	int keyCode;
+	GetConsoleScreenBufferInfo(oh, &ci);
+	focusOnNextElement(&ci.dwCursorPosition, oh);
+	SetConsoleCursorPosition(oh, ci.dwCursorPosition);
 	while (1) {
+
+		GetConsoleScreenBufferInfo(oh, &ci);
+		
+		COORD crsr = ci.dwCursorPosition;
+		crsr.X -= 1;
+		crsr.Y -= 1;
+		elem->updateView(crsr);
+		for (int i = 0; i < v->height; i++) {
+			npos.X = 1;
+			npos.Y = i+1;
+			SetConsoleCursorPosition(oh, npos);
+			for (int j = 0; j < v->width; j++) {
+				int vi = (i*v->width) + j;
+				SetConsoleTextAttribute(oh, color_to_rgb(v->fcolor[vi], v->bcolor[vi]));
+				cout << v->text[vi];
+			}
+		}
+		SetConsoleCursorPosition(oh, ci.dwCursorPosition);
 		ReadConsoleInput(ih, &c, 1, &read);
 		if (read == 1) {
 			if (c.EventType == KEY_EVENT && c.Event.KeyEvent.bKeyDown) {
@@ -32,7 +61,7 @@ void EventEngine::Run(IControl *elem) {
 				int width = ci.srWindow.Bottom - ci.srWindow.Top;
 				if (handleKeys(&ci.dwCursorPosition, c.Event.KeyEvent.uChar.AsciiChar, keyCode, oh)) {
 				}
-				else if (keyCode == 37) {
+				/*else if (keyCode == 37) {
 					ci.dwCursorPosition.X = (ci.dwCursorPosition.X <= 0) ? 0 : ci.dwCursorPosition.X - 1;
 				}
 				else if (keyCode == 39) {
@@ -43,9 +72,9 @@ void EventEngine::Run(IControl *elem) {
 				}
 				else if (keyCode == 40) {
 					ci.dwCursorPosition.Y = (ci.dwCursorPosition.Y >= ci.dwMaximumWindowSize.Y) ? 0 : ci.dwCursorPosition.Y + 1;
-				}
+				}*/
 				SetConsoleCursorPosition(oh, ci.dwCursorPosition);
-				redraw(oh, ci);
+				//redraw(oh, ci);
 				SetConsoleCursorPosition(oh, ci.dwCursorPosition);
 			}
 			else if (c.EventType == MOUSE_EVENT && c.Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
@@ -55,13 +84,11 @@ void EventEngine::Run(IControl *elem) {
 				SetConsoleCursorPosition(oh, ci.dwCursorPosition);
 			}
 		}
-		validate_views(oh);
+		//validate_views(oh);
 	}
 
 
 }
-
-
 
 bool EventEngine::handleKeys(PCOORD cor, char c, int keycode, HANDLE oh) {
 
@@ -75,7 +102,7 @@ bool EventEngine::handleKeys(PCOORD cor, char c, int keycode, HANDLE oh) {
 		return true;
 	}
 		if (element->handle_keys(cor, window, c, keycode)) {
-			element->draw(oh, mouse, window);
+			//element->draw(oh, mouse, window);
 			return true;
 		}
 	return false;
@@ -157,8 +184,8 @@ void EventEngine::validate_views(HANDLE oh)
 	GetConsoleScreenBufferInfo(oh, &info);
 	if (needsRefresh) {
 		needsRefresh = false;
-		clear_screen(oh);
-		redraw(oh, info);
+		//clear_screen(oh);
+		//redraw(oh, info);
 		return;
 	}
 
@@ -184,77 +211,122 @@ bool EventEngine::handleMouse(PCOORD mouse, PCOORD cursor, HANDLE oh) {
 	}*/
 	//for (int i = 0; i < elements.size(); i++) {
 		if (element->handle_clicks(mouse, screen, cursor)) {
-			element->draw(oh, cr, screen);
+			//element->draw(oh, cr, screen);
 			return true;
 		}
 	//}
 	return false;
 }
 
+ int currentTabPos = -1;
+ vector<TabPosition> tb;
+
+bool comparePositions(TabPosition a, TabPosition b) {
+	return (a.offset.Y < b.offset.Y ||
+		(a.offset.Y == b.offset.Y && a.offset.X < b.offset.X) ||
+		(a.offset.Y == b.offset.Y && a.offset.X == b.offset.X && a.pos.Y < b.pos.Y) ||
+		(a.offset.Y == b.offset.Y && a.offset.X == b.offset.X && a.pos.Y == b.pos.Y && a.pos.X <= b.pos.X));
+		
+}
+
 void EventEngine::focusOnNextElement(PCOORD pos, HANDLE oh) {
 	if (element == NULL) { return; }
-	//for (int i = 0; i < elements.size(); i++) {
-
-		if (element->tabPositions().size() == 0) { return; }
-		if (element->intersects(pos, { 0,0 })) {
-			IControl *f = element;
-			int index = -1;
-			int min = -1;
-			for (int j = 0; j < f->tabPositions().size(); j++) {
-				COORD tb = f->tabPositions()[j];
-				int dist = ((tb.Y - pos->Y) * f->width());
-				if (dist == 0) {
-					dist = tb.X - pos->X;
-				} else {
-					dist += f->pos().X + f->width() - pos->X;
-					dist += tb.X - f->pos().X;
-				}
-
-				if (dist > 0 && (dist < min || min == -1)) {
-					min = dist;
-					index = j;
-				}
-			}
-			if (index == -1) {
-				pos->X = f->pos().X + f->width() + 1;
-				pos->Y = f->pos().Y;
-			}
-			else {
-				pos->X = f->tabPositions()[index].X;
-				pos->Y = f->tabPositions()[index].Y;
-				return;
-			}
-		}
-	//}
-	CONSOLE_SCREEN_BUFFER_INFO info;
-	GetConsoleScreenBufferInfo(oh, &info);
-
-	int index = 0;
-	int distance = -1;
-	int offset = pos->X + pos->Y *info.dwMaximumWindowSize.X;
-	int num;
-	int smallestIndex = 0;
-	int smallestNum = -1;
-//	for (int i = 0; i < elements.size(); i++) {
-		if (element->tabPositions().size() == 0) { return; }
-		num = element->pos().X + (element->pos().Y * info.dwMaximumWindowSize.X) - offset;
-		if (num > 0 && (num < distance || distance == -1)) {
-			distance = num;
-			index = 0;
-		}
-
-		if (num < smallestNum || smallestNum == -1) {
-				smallestNum = num;
-				smallestIndex = 0;
-		}
-	//}
-	
-	if (distance == -1) { distance = smallestIndex; }
-
-	if (distance != -1 && element->tabPositions().size() > 0) {
-		pos->X = element->tabPositions()[0].X;
-		pos->Y = element->tabPositions()[0].Y;
+	tb = element->tabPositions();
+	int lastIndex = currentTabPos;
+	for (int j = 0; j < tb.size(); j++) {
+		tb[j].pos.X += element->pos().X - 1;
+		tb[j].pos.Y += element->pos().Y - 1;
+		tb[j].offset.X += element->pos().X - 1;
+		tb[j].offset.Y += element->pos().Y - 1;
 	}
+	sort(tb.begin(), tb.end(), comparePositions);
+	
+
+		currentTabPos += 1;
+		if (currentTabPos >= tb.size()) {
+			currentTabPos = 0;
+		}
+		for (int i = 0; i < tb.size(); i++) {
+			if (currentTabPos >= tb.size()) {
+				currentTabPos = 0;
+			}
+			if (tb[currentTabPos].active) {
+				break;
+			}
+			currentTabPos += 1;
+		}
+	
+	if (tb.size() > 0) {
+		COORD p = tb[currentTabPos].pos;
+		*pos = p;
+		if (lastIndex != -1 && lastIndex < tb.size() && tb[currentTabPos].element != tb[lastIndex].element) {
+			
+			tb[lastIndex].element->setActive(false);
+		}
+		tb[currentTabPos].element->setActive(true);
+	}
+	return;
+//
+//		if (tb.size() == 0) { return; }
+//		if (element->intersects(pos, { 0,0 })) {
+//			IControl *f = element;
+//			int index = -1;
+//			int min = -1;
+//			for (int j = 0; j < f->tabPositions().size(); j++) {
+//				COORD tb = f->tabPositions()[j];
+//				int dist = ((tb.Y - pos->Y) * f->width());
+//				if (dist == 0) {
+//					dist = tb.X - pos->X;
+//				} else {
+//					dist += f->pos().X + f->width() - pos->X;
+//					dist += tb.X - f->pos().X;
+//				}
+//
+//				if (dist > 0 && (dist < min || min == -1)) {
+//					min = dist;
+//					index = j;
+//				}
+//			}
+//			if (index == -1) {
+//				pos->X = f->pos().X + f->width() + 1;
+//				pos->Y = f->pos().Y;
+//			}
+//			else {
+//				pos->X = f->tabPositions()[index].X;
+//				pos->Y = f->tabPositions()[index].Y;
+//				return;
+//			}
+//		}
+//	//}
+//	CONSOLE_SCREEN_BUFFER_INFO info;
+//	GetConsoleScreenBufferInfo(oh, &info);
+//
+//	int index = 0;
+//	int distance = -1;
+//	int offset = pos->X + pos->Y *info.dwMaximumWindowSize.X;
+//	int num;
+//	int smallestIndex = 0;
+//	int smallestNum = -1;
+////	for (int i = 0; i < elements.size(); i++) {
+//		if (element->tabPositions().size() == 0) { return; }
+//		num = element->pos().X + (element->pos().Y * info.dwMaximumWindowSize.X) - offset;
+//		if (num > 0 && (num < distance || distance == -1)) {
+//			distance = num;
+//			index = 0;
+//		}
+//
+//		if (num < smallestNum || smallestNum == -1) {
+//				smallestNum = num;
+//				smallestIndex = 0;
+//		}
+//	//}
+//	
+//	if (distance == -1) { distance = smallestIndex; }
+//
+//	if (distance != -1 && element->tabPositions().size() > 0) {
+//		pos->X = element->tabPositions()[0].X;
+//		pos->Y = element->tabPositions()[0].Y;
+//	}
 }
 
 EventEngine::~EventEngine() {

@@ -7,6 +7,7 @@
 #include "Checklist.h"
 #include "ComboBox.h"
 #include "Popup.h"
+#include <algorithm>
 
 class EventEngine
 {

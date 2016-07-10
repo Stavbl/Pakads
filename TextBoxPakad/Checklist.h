@@ -24,6 +24,7 @@ public:
 	void SelectIndex(size_t i);
 	void DeselectIndex(size_t i);
 	vector<size_t> GetSelectedIndicies();
+	void updateView(COORD cursor);
 	~Checklist();
 };
 
